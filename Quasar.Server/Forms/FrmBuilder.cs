@@ -99,10 +99,14 @@ namespace Quasar.Server.Forms
 
         private void FrmBuilder_Load(object sender, EventArgs e)
         {
-            // Disable keylogger functionality - feature has been removed
-            chkKeylogger.Checked = false;
-            chkKeylogger.Enabled = false;
-            chkKeylogger.Text = "Keylogger functionality has been removed";
+            // Hide keylogger functionality - feature has been completely removed
+            chkKeylogger.Visible = false;
+            lblLogDirectory.Visible = false;
+            txtLogDirectoryName.Visible = false;
+            chkHideLogDirectory.Visible = false;
+            line10.Visible = false;
+            label14.Visible = false;
+
             lstHosts.DataSource = new BindingSource(_hosts, null);
             LoadProfile("Default");
 
@@ -112,7 +116,6 @@ namespace Quasar.Server.Forms
             UpdateStartupControlStates();
             UpdateAssemblyControlStates();
             UpdateIconControlStates();
-            UpdateKeyloggerControlStates();
         }
 
         private void FrmBuilder_FormClosing(object sender, FormClosingEventArgs e)
@@ -215,9 +218,8 @@ namespace Quasar.Server.Forms
 
         private void chkKeylogger_CheckedChanged(object sender, EventArgs e)
         {
+            // Keylogger functionality permanently disabled
             HasChanged();
-
-            UpdateKeyloggerControlStates();
         }
 
         private void btnBrowseIcon_Click(object sender, EventArgs e)
@@ -274,7 +276,7 @@ namespace Quasar.Server.Forms
             options.Startup = chkStartup.Checked;
             options.HideFile = chkHide.Checked;
             options.HideInstallSubdirectory = chkHideSubDirectory.Checked;
-            options.Keylogger = chkKeylogger.Checked;
+            options.Keylogger = false; // Keylogger functionality permanently disabled
             options.LogDirectoryName = txtLogDirectoryName.Text;
             options.HideLogDirectory = chkHideLogDirectory.Checked;
 
@@ -504,8 +506,9 @@ namespace Quasar.Server.Forms
 
         private void UpdateKeyloggerControlStates()
         {
-            txtLogDirectoryName.Enabled = chkKeylogger.Checked;
-            chkHideLogDirectory.Enabled = chkKeylogger.Checked;
+            // Keylogger functionality permanently disabled
+            txtLogDirectoryName.Enabled = false;
+            chkHideLogDirectory.Enabled = false;
         }
 
         private void HasChanged()
