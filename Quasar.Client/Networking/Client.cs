@@ -1,4 +1,4 @@
-﻿using Quasar.Client.ReverseProxy;
+using Quasar.Client.ReverseProxy;
 using Quasar.Common.Extensions;
 using Quasar.Common.Messages;
 using Quasar.Common.Messages.ReverseProxy;
@@ -182,10 +182,6 @@ namespace Quasar.Client.Networking
         /// </summary>
         private List<ReverseProxyClient> _proxyClients = new List<ReverseProxyClient>();
 
-        /// <summary>
-        /// The internal index of the message type.
-        /// </summary>
-        private int _typeIndex;
 
         /// <summary>
         /// Lock object for the list of proxy clients.

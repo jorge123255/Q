@@ -1,5 +1,8 @@
-﻿<?xml version="1.0" encoding="utf-8" ?>
+<?xml version="1.0" encoding="utf-8" ?>
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Add the ILRepack task reference -->
+  <UsingTask AssemblyFile="$(MSBuildThisFileDirectory)..\packages\ILRepack.Lib.MSBuild.Task\lib\net46\ILRepack.Lib.MSBuild.Task.dll" TaskName="ILRepack" />
+  
   <Target Name="ILRepacker" AfterTargets="PostBuildEvent" Condition="'$(Configuration)' == 'Release'">
 
   <ItemGroup>
