@@ -243,7 +243,6 @@ networks:
     internal: true
   monitoring-network:
     driver: bridge
-    internal: true
 
 volumes:
   prometheus_data:
