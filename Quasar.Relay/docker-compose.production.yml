@@ -21,6 +21,7 @@ services:
     networks:
       - relay-network
       - frontend-network
+      - monitoring-network
 
   quasar-relay-1:
     build:
