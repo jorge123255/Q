@@ -1,0 +1,74 @@
+groups:
+  - name: relay_alerts
+    rules:
+      - alert: RelayServerDown
+        expr: up{job="relay-servers"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Relay Server Down"
+          description: "Relay server {{ $labels.instance }} has been down for more than 1 minute."
+
+      - alert: HighConnectionRate
+        expr: rate(quasar_relay_connection_attempts_total[5m]) > 50
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Connection Rate"
+          description: "Relay server {{ $labels.instance }} has high connection rate ({{ $value }} connections/s)."
+
+      - alert: HighSecurityEventRate
+        expr: rate(quasar_relay_security_events_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Security Event Rate"
+          description: "Relay server {{ $labels.instance }} has high security event rate ({{ $value }} events/s)."
+
+      - alert: HighRateLimitingEvents
+        expr: rate(quasar_relay_rate_limited_total[5m]) > 20
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Rate Limiting"
+          description: "Relay server {{ $labels.instance }} is rate limiting many connections ({{ $value }}/s). Possible abuse attempt."
+
+      - alert: EncryptionFailures
+        expr: rate(quasar_relay_encryption_failures_total[5m]) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Encryption Failures"
+          description: "Relay server {{ $labels.instance }} is experiencing encryption failures ({{ $value }}/s). Possible attack or client misconfiguration."
+
+      - alert: AuditLogSize
+        expr: quasar_relay_audit_log_size_bytes > 1073741824  # 1GB
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Large Audit Log"
+          description: "Audit log on {{ $labels.instance }} has grown beyond 1GB. Consider log rotation."
+
+      - alert: HighMemoryUsage
+        expr: (node_memory_MemTotal_bytes - node_memory_MemAvailable_bytes) / node_memory_MemTotal_bytes * 100 > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High Memory Usage"
+          description: "Server memory usage is above 85% for more than 5 minutes."
+
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU Usage"
+          description: "Server CPU usage is above 80% for more than 5 minutes."

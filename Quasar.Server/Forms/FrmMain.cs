@@ -3,6 +3,8 @@ using Quasar.Common.Messages;
 using Quasar.Server.Extensions;
 using Quasar.Server.Messages;
 using Quasar.Server.Models;
+using System.Diagnostics;
+using System.Threading.Tasks;
 using Quasar.Server.Networking;
 using Quasar.Server.Utilities;
 using System;
@@ -138,9 +140,22 @@ namespace Quasar.Server.Forms
 
         private void AutostartListening()
         {
+            // Prioritize relay mode as the primary connection method
+            bool relayStarted = false;
+            
+            // Start relay mode first if configured or set to auto-start
+            if (!string.IsNullOrEmpty(Properties.Settings.Default.RelayServerUrl) &&
+                (Properties.Settings.Default.RelayAutoStart || true)) // Always try relay first
+            {
+                Task.Run(async () => relayStarted = await StartRelayModeAsync());
+            }
+            
+            // Fall back to direct listening if needed and configured
             if (Settings.AutoListen)
             {
+                // Give relay a chance to connect first, then start direct listening as backup
                 StartConnectionListener();
+                listenToolStripStatusLabel.Text += " (Direct connections also enabled)";
             }
 
             if (Settings.EnableNoIPUpdater)
@@ -148,10 +163,54 @@ namespace Quasar.Server.Forms
                 NoIpUpdater.Start();
             }
         }
+        
+        private async Task StartRelayModeAsync()
+        {
+            try
+            {
+                bool success = await ListenServer.StartRelayModeAsync(
+                    Properties.Settings.Default.RelayServerUrl,
+                    string.IsNullOrEmpty(Properties.Settings.Default.RelayDeviceId) ? null : Properties.Settings.Default.RelayDeviceId,
+                    string.IsNullOrEmpty(Properties.Settings.Default.RelayPassword) ? null : Properties.Settings.Default.RelayPassword);
+                
+                if (success)
+                {
+                    listenToolStripStatusLabel.Text += $" Relay mode active. Device ID: {ListenServer.RelayDeviceId}";
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log error but don't display a message box during auto-start
+                Debug.WriteLine($"Failed to start relay mode: {ex.Message}");
+            }
+        }
 
         private void FrmMain_Load(object sender, EventArgs e)
         {
+            LoadProfiles();
+            LoadHosts();
+            ApplyTheme();
             InitializeServer();
+            
+            // Relay mode is now the primary connection method
+            // Update the UI to reflect this priority
+            listenToolStripStatusLabel.Text = "Connecting via relay server...";
+            
+            // Show relay settings on startup to emphasize it as the primary connection method
+            if (string.IsNullOrEmpty(Properties.Settings.Default.RelayServerUrl))
+            {
+                MessageBox.Show("Welcome to Quasar! Relay mode is the preferred connection method. Please configure your relay settings to get started.", 
+                    "Relay Configuration", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                using (var frm = new FrmRelaySettings(ListenServer))
+                {
+                    frm.ShowDialog();
+                }
+            }
+            
+            // Populate listeners after potential relay configuration
+            PopulateListeners();
+            
+            // Auto-start listening with priority on relay mode
             AutostartListening();
         }
 
@@ -728,6 +787,20 @@ namespace Quasar.Server.Forms
             using (var frm = new FrmAbout())
             {
                 frm.ShowDialog();
+            }
+        }
+        
+        private void relaySettingsToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            using (var frm = new FrmRelaySettings(ListenServer))
+            {
+                frm.ShowDialog();
+                
+                // Update status label if relay mode is active
+                if (ListenServer.RelayEnabled)
+                {
+                    listenToolStripStatusLabel.Text = $"{listenToolStripStatusLabel.Text.Split('.')[0]}. Relay mode active. Device ID: {ListenServer.RelayDeviceId}";
+                }
             }
         }
 

@@ -1,0 +1,23 @@
+FROM ubuntu:20.04
+
+# Install required packages
+RUN apt-get update && apt-get install -y \
+    iptables \
+    iproute2 \
+    iputils-ping \
+    net-tools \
+    curl \
+    tcpdump \
+    netcat \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create a script to configure the NAT based on environment variables
+COPY nat-setup.sh /usr/local/bin/nat-setup.sh
+RUN chmod +x /usr/local/bin/nat-setup.sh
+
+# Set the entry point to the NAT setup script
+ENTRYPOINT ["/usr/local/bin/nat-setup.sh"]
+
+# Default command to keep the container running
+CMD ["tail", "-f", "/dev/null"]

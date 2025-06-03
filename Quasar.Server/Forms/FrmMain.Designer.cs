@@ -85,6 +85,7 @@ namespace Quasar.Server.Forms
             this.fIleToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.closeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.settingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.relaySettingsToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.builderToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.contextMenuStrip.SuspendLayout();
@@ -763,6 +764,7 @@ namespace Quasar.Server.Forms
             this.menuStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.fIleToolStripMenuItem,
             this.settingsToolStripMenuItem,
+            this.relaySettingsToolStripMenuItem,
             this.builderToolStripMenuItem,
             this.aboutToolStripMenuItem});
             this.menuStrip.Location = new System.Drawing.Point(0, 0);
@@ -792,6 +794,13 @@ namespace Quasar.Server.Forms
             this.settingsToolStripMenuItem.Size = new System.Drawing.Size(61, 21);
             this.settingsToolStripMenuItem.Text = "Settings";
             this.settingsToolStripMenuItem.Click += new System.EventHandler(this.settingsToolStripMenuItem_Click);
+            // 
+            // relaySettingsToolStripMenuItem
+            // 
+            this.relaySettingsToolStripMenuItem.Name = "relaySettingsToolStripMenuItem";
+            this.relaySettingsToolStripMenuItem.Size = new System.Drawing.Size(101, 21);
+            this.relaySettingsToolStripMenuItem.Text = "Relay Settings";
+            this.relaySettingsToolStripMenuItem.Click += new System.EventHandler(this.relaySettingsToolStripMenuItem_Click);
             // 
             // builderToolStripMenuItem
             // 

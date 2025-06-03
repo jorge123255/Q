@@ -1,10 +1,11 @@
-﻿using Quasar.Common.Cryptography;
+using Quasar.Common.Cryptography;
 using Quasar.Common.Messages;
 using System;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace Quasar.Server.Networking
 {
@@ -63,6 +64,21 @@ namespace Quasar.Server.Networking
         }
 
         /// <summary>
+        /// The relay listener for handling relay connections.
+        /// </summary>
+        private RelayListener _relayListener;
+
+        /// <summary>
+        /// Gets whether the relay system is enabled.
+        /// </summary>
+        public bool RelayEnabled { get; private set; }
+
+        /// <summary>
+        /// Gets the relay device ID if relay mode is enabled.
+        /// </summary>
+        public string RelayDeviceId => _relayListener?.DeviceId;
+
+        /// <summary>
         /// Constructor, initializes required objects and subscribes to events of the server.
         /// </summary>
         /// <param name="serverCertificate">The server certificate.</param>
@@ -70,6 +86,10 @@ namespace Quasar.Server.Networking
         {
             base.ClientState += OnClientState;
             base.ClientRead += OnClientRead;
+            
+            // Initialize the relay listener
+            _relayListener = new RelayListener();
+            _relayListener.ClientConnected += OnRelayClientConnected;
         }
 
         /// <summary>
