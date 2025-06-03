@@ -443,3 +443,18 @@ const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {
   console.log(`Signaling server running on port ${PORT}`);
 });
+
+// Health check endpoint for monitoring
+app.get('/health', (req, res) => {
+  res.status(200).send('healthy');
+});
+
+// Graceful shutdown handler
+process.on('SIGTERM', () => {
+  console.log('SIGTERM signal received: closing HTTP server');
+  server.close(() => {
+    console.log('HTTP server closed');
+    pool.end();
+    process.exit(0);
+  });
+});
