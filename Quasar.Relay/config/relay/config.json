@@ -7,7 +7,7 @@
     "logPath": "/app/logs/server.log"
   },
   "security": {
-    "rateLimit": {
+    "rateLimiting": {
       "enabled": true,
       "maxConnections": 20,
       "timeWindowMs": 60000,
