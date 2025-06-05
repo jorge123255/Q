@@ -14,7 +14,7 @@
       "banDuration": 3600000
     },
     "encryption": {
-      "enforced": true,
+      "required": true,
       "keyDerivationIterations": 10000,
       "keyLength": 256,
       "algorithm": "aes-256-gcm"
