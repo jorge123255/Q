@@ -39,7 +39,8 @@
       "maxFiles": 30,
       "logSecurityEvents": true,
       "logConnectionEvents": true,
-      "logDataEvents": false
+      "logDataEvents": false,
+      "securityEvents": ["login", "logout", "authentication", "authorization", "connection"]
     },
     "ipBlacklist": {
       "enabled": true,
