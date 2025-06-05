@@ -38,7 +38,7 @@ services:
       - ./data/relay1:/app/data
     environment:
       - NODE_ENV=production
-      - RELAY_SERVER_URL=wss://your-domain.com
+      - RELAY_SERVER_URL=wss://relay.nextcloudcyber.com
       - RELAY_SERVER_ID=relay1
       - STUN_SERVER_PORT=3478
       - ENABLE_SECURITY=true
@@ -47,6 +47,8 @@ services:
       - AUDIT_LOGGING=true
       - ENCRYPTION_REQUIRED=true
       - SECURE_CREDENTIAL_STORAGE=true
+    command: >
+      sh -c "ln -sf /app/config/config.json /app/config.json && node server.js"
     restart: unless-stopped
     logging:
       driver: "json-file"
@@ -78,7 +80,7 @@ services:
       - ./data/relay2:/app/data
     environment:
       - NODE_ENV=production
-      - RELAY_SERVER_URL=wss://your-domain.com
+      - RELAY_SERVER_URL=wss://relay.nextcloudcyber.com
       - RELAY_SERVER_ID=relay2
       - STUN_SERVER_PORT=3478
       - ENABLE_SECURITY=true
@@ -87,6 +89,8 @@ services:
       - AUDIT_LOGGING=true
       - ENCRYPTION_REQUIRED=true
       - SECURE_CREDENTIAL_STORAGE=true
+    command: >
+      sh -c "ln -sf /app/config/config.json /app/config.json && node server.js"
     restart: unless-stopped
     logging:
       driver: "json-file"

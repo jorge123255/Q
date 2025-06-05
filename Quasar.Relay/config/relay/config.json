@@ -1,0 +1,90 @@
+{
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8080,
+    "maxConnections": 500,
+    "connectionTimeout": 300000,
+    "logPath": "/app/logs/server.log"
+  },
+  "security": {
+    "rateLimit": {
+      "enabled": true,
+      "maxConnections": 20,
+      "timeWindowMs": 60000,
+      "banDuration": 3600000
+    },
+    "encryption": {
+      "enforced": true,
+      "keyDerivationIterations": 10000,
+      "keyLength": 256,
+      "algorithm": "aes-256-gcm"
+    },
+    "credentialStorage": {
+      "enabled": true,
+      "encryptionKeyDerivation": "machine-specific",
+      "credentialValidityDays": 90,
+      "passwordRequirements": {
+        "minLength": 12,
+        "requireUppercase": true,
+        "requireLowercase": true,
+        "requireNumbers": true,
+        "requireSpecialChars": true
+      }
+    },
+    "auditLogging": {
+      "enabled": true,
+      "logPath": "/app/logs/audit.log",
+      "rotationSize": "100MB",
+      "maxFiles": 30,
+      "logSecurityEvents": true,
+      "logConnectionEvents": true,
+      "logDataEvents": false
+    },
+    "ipBlacklist": {
+      "enabled": true,
+      "maxFailedAttempts": 10,
+      "resetTimeWindow": 86400000,
+      "banDuration": 86400000
+    }
+  },
+  "stun": {
+    "enabled": true,
+    "port": 3478,
+    "publicIP": "auto"
+  },
+  "monitoring": {
+    "metrics": {
+      "enabled": true,
+      "endpoint": "/metrics",
+      "collectSystemMetrics": true,
+      "collectConnectionMetrics": true,
+      "collectSecurityMetrics": true
+    },
+    "healthCheck": {
+      "enabled": true,
+      "endpoint": "/health",
+      "includeDetails": false
+    }
+  },
+  "clustering": {
+    "enabled": true,
+    "syncInterval": 5000
+  },
+  "relayConnection": {
+    "fallbackToDirectConnection": true,
+    "maxRetryAttempts": 3,
+    "retryDelayMs": 5000,
+    "reconnectOnDisconnect": true,
+    "keepAliveIntervalMs": 30000
+  },
+  "natTraversal": {
+    "supportedNatTypes": [
+      "FullCone",
+      "AddressRestricted",
+      "PortRestricted",
+      "Symmetric"
+    ],
+    "preferRelayForSymmetricNat": true,
+    "stunServerTimeout": 5000
+  }
+}
