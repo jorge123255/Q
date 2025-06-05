@@ -11,7 +11,8 @@
       "enabled": true,
       "maxConnections": 20,
       "timeWindowMs": 60000,
-      "banDuration": 3600000
+      "banDuration": 3600000,
+      "ipWhitelist": ["127.0.0.1", "::1"]
     },
     "encryption": {
       "required": true,
