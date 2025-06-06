@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
   <PropertyGroup>
     <TargetFramework>net452</TargetFramework>
     <OutputType>WinExe</OutputType>
@@ -29,9 +29,18 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="System" />
     <Reference Include="System.Configuration" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.ServiceModel" />
     <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Net.Http" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Security" />
   </ItemGroup>
   <ItemGroup>
     <Compile Update="Controls\DotNetBarTabControl.cs">
@@ -317,6 +326,5 @@
     <!-- Settings to avoid System.Resources.Extensions requirement -->
     <GenerateResourceUsePreserializedResources>false</GenerateResourceUsePreserializedResources>
     <UseWindowsForms>true</UseWindowsForms>
-    <DisableImplicitFrameworkReferences>true</DisableImplicitFrameworkReferences>
   </PropertyGroup>
 </Project>
