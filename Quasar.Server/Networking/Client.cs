@@ -1,4 +1,4 @@
-﻿using Quasar.Common.Messages;
+using Quasar.Common.Messages;
 using Quasar.Common.Networking;
 using System;
 using System.Collections.Generic;
@@ -466,7 +466,7 @@ namespace Quasar.Server.Networking
         /// </summary>
         /// <typeparam name="T">The type of the message.</typeparam>
         /// <param name="message">The message to be sent.</param>
-        public void Send<T>(T message) where T : IMessage
+        public virtual void Send<T>(T message) where T : IMessage
         {
             if (!Connected || message == null) return;
 
@@ -568,7 +568,7 @@ namespace Quasar.Server.Networking
         /// Disconnect the client from the server and dispose of
         /// resources associated with the client.
         /// </summary>
-        public void Disconnect()
+        public virtual void Disconnect()
         {
             if (_stream != null)
             {

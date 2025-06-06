@@ -1,3 +1,4 @@
+using Quasar.Common.Enums;
 using Quasar.Common.Messages;
 using Quasar.Server.Helper;
 using Quasar.Server.Messages;
