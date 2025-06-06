@@ -23,6 +23,25 @@ namespace Quasar.Client.Networking
     public class Client : ISender
     {
         /// <summary>
+        /// Sends a message to the server
+        /// </summary>
+        /// <typeparam name="T">The type of the message</typeparam>
+        /// <param name="message">The message to send</param>
+        public void Send<T>(T message) where T : IMessage
+        {
+            if (Connected)
+            {
+                try
+                {
+                    SendMessage(message);
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine("Error sending message: " + ex.Message);
+                }
+            }
+        }
+        /// <summary>
         /// The relay client connection for handling relay-based connections
         /// </summary>
         private RelayClientConnection _relayConnection;
@@ -205,7 +224,6 @@ namespace Quasar.Client.Networking
         /// </summary>
         private List<ReverseProxyClient> _proxyClients = new List<ReverseProxyClient>();
 
-
         /// <summary>
         /// Lock object for the list of proxy clients.
         /// </summary>
@@ -266,28 +284,13 @@ namespace Quasar.Client.Networking
         /// <summary>
         /// Buffer for reading data from the stream.
         /// </summary>
-        private byte[] _readBuffer;
+        private byte[] _tcpReadBuffer;
         
         /// <summary>
         /// Buffer for storing and processing payload data.
         /// </summary>
-        private byte[] _payloadBuffer;
+        private byte[] _tcpPayloadBuffer;
         
-        /// <summary>
-        /// The queue which holds buffers to send.
-        /// </summary>
-        private readonly Queue<IMessage> _sendBuffers = new Queue<IMessage>();
-        
-        /// <summary>
-        /// The list which holds the reverse proxy clients of this client.
-        /// </summary>
-        private readonly List<ReverseProxyClient> _proxyClients = new List<ReverseProxyClient>();
-        
-        /// <summary>
-        /// Lock object for the proxy clients list.
-        /// </summary>
-        private readonly object _proxyClientsLock = new object();
-
         /// <summary>
         /// Constructor of the client, initializes serializer types.
         /// </summary>

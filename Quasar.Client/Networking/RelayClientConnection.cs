@@ -162,7 +162,7 @@ namespace Quasar.Client.Networking
         /// </summary>
         /// <param name="password">The password to derive keys from</param>
         /// <returns>Generated key and IV</returns>
-        private (byte[] Key, byte[] IV) GenerateKeyFromPassword(string password)
+        private EncryptionKeyPair GenerateKeyFromPassword(string password)
         {
             // Use a password-based key derivation function
             using (var deriveBytes = new System.Security.Cryptography.Rfc2898DeriveBytes(
@@ -170,7 +170,7 @@ namespace Quasar.Client.Networking
                 new byte[] { 0x43, 0x87, 0x23, 0x72, 0x45, 0x56, 0x68, 0x14, 0x62, 0x84 }, // Salt
                 10000)) // Iteration count
             {
-                return (deriveBytes.GetBytes(32), deriveBytes.GetBytes(16)); // 256-bit key, 128-bit IV
+                return new EncryptionKeyPair(deriveBytes.GetBytes(32), deriveBytes.GetBytes(16)); // 256-bit key, 128-bit IV
             }
         }
         
