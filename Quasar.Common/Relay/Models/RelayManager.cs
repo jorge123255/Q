@@ -7,7 +7,9 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
+using System.IO;
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Json;
 
 namespace Quasar.Common.Relay.Models
 {
@@ -356,8 +358,13 @@ namespace Quasar.Common.Relay.Models
                     return false;
                     
                 // Serialize the message
-                string json = JsonConvert.SerializeObject(message);
-                byte[] messageBytes = Encoding.UTF8.GetBytes(json);
+                byte[] messageBytes;
+                using (MemoryStream ms = new MemoryStream())
+                {
+                    DataContractJsonSerializer serializer = new DataContractJsonSerializer(message.GetType());
+                    serializer.WriteObject(ms, message);
+                    messageBytes = ms.ToArray();
+                }
                 
                 // Send the message
                 _sendMutex.WaitOne();
@@ -389,8 +396,13 @@ namespace Quasar.Common.Relay.Models
         private byte[] SerializeAndEncryptMessage(IMessage message)
         {
             // Serialize the message to JSON
-            string json = JsonConvert.SerializeObject(message);
-            byte[] messageBytes = Encoding.UTF8.GetBytes(json);
+            byte[] messageBytes;
+            using (MemoryStream ms = new MemoryStream())
+            {
+                DataContractJsonSerializer serializer = new DataContractJsonSerializer(message.GetType());
+                serializer.WriteObject(ms, message);
+                messageBytes = ms.ToArray();
+            }
             
             // Encrypt the message data
             return _securityProvider.EncryptData(messageBytes);
@@ -407,7 +419,6 @@ namespace Quasar.Common.Relay.Models
                 byte[] decryptedData = _securityProvider.DecryptData(encryptedData);
                 
                 // Deserialize the message
-                string json = Encoding.UTF8.GetString(decryptedData);
                 Type type = Type.GetType(messageType);
                 
                 if (type == null)
@@ -416,7 +427,11 @@ namespace Quasar.Common.Relay.Models
                     return null;
                 }
                 
-                return (IMessage)JsonConvert.DeserializeObject(json, type);
+                using (MemoryStream ms = new MemoryStream(decryptedData))
+                {
+                    DataContractJsonSerializer serializer = new DataContractJsonSerializer(type);
+                    return (IMessage)serializer.ReadObject(ms);
+                }
             }
             catch (Exception ex)
             {
