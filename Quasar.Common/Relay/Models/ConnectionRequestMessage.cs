@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.Serialization;
+using Quasar.Common.Utilities;
 
 namespace Quasar.Common.Relay.Models
 {
@@ -38,7 +39,7 @@ namespace Quasar.Common.Relay.Models
         /// </summary>
         public ConnectionRequestMessage()
         {
-            Timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            Timestamp = DateTime.UtcNow.ToUnixTimeMilliseconds();
         }
     }
 }
