@@ -304,14 +304,24 @@ namespace Quasar.Common.Relay.Models
                 if (messageJson.Contains("\"DeviceIdAssigned\":"))
                 {
                     // Device ID assignment message
-                    var deviceIdMessage = JsonConvert.DeserializeObject<RelayDeviceIdAssignment>(messageJson);
+                    RelayDeviceIdAssignment deviceIdMessage;
+                    using (MemoryStream ms = new MemoryStream(Encoding.UTF8.GetBytes(messageJson)))
+                    {
+                        DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(RelayDeviceIdAssignment));
+                        deviceIdMessage = (RelayDeviceIdAssignment)serializer.ReadObject(ms);
+                    }
                     DeviceId = deviceIdMessage.DeviceIdAssigned;
                     _securityProvider.LogAuditEvent($"Device ID assigned: {DeviceId}");
                 }
                 else if (messageJson.Contains("\"MessageType\":") && messageJson.Contains("\"MessageData\":"))
                 {
                     // Relay message containing an actual command/message
-                    var relayMessage = JsonConvert.DeserializeObject<RelayMessage>(messageJson);
+                    RelayMessage relayMessage;
+                    using (MemoryStream ms = new MemoryStream(Encoding.UTF8.GetBytes(messageJson)))
+                    {
+                        DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(RelayMessage));
+                        relayMessage = (RelayMessage)serializer.ReadObject(ms);
+                    }
                     
                     // Decrypt and deserialize the message
                     var message = DecryptAndDeserializeMessage(relayMessage.MessageData, relayMessage.MessageType);
@@ -325,7 +335,12 @@ namespace Quasar.Common.Relay.Models
                 else if (messageJson.Contains("\"SourceDeviceId\":") && messageJson.Contains("\"Connected\":"))
                 {
                     // Connection status message
-                    var connectionStatus = JsonConvert.DeserializeObject<RelayConnectionStatus>(messageJson);
+                    RelayConnectionStatus connectionStatus;
+                    using (MemoryStream ms = new MemoryStream(Encoding.UTF8.GetBytes(messageJson)))
+                    {
+                        DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(RelayConnectionStatus));
+                        connectionStatus = (RelayConnectionStatus)serializer.ReadObject(ms);
+                    }
                     
                     // Log the connection status
                     _securityProvider.LogAuditEvent(
