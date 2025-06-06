@@ -27,7 +27,7 @@ namespace Quasar.Client.Networking
         /// </summary>
         /// <typeparam name="T">The type of the message</typeparam>
         /// <param name="message">The message to send</param>
-        public void Send<T>(T message) where T : IMessage
+        public virtual void Send<T>(T message) where T : IMessage
         {
             if (Connected)
             {
@@ -532,7 +532,7 @@ namespace Quasar.Client.Networking
         /// are held by this client, and dispose of other resources associated
         /// with this client.
         /// </summary>
-        public void Disconnect()
+        public virtual void Disconnect()
         {
             // Disconnect the relay connection if active
             if (_relayConnection != null)
