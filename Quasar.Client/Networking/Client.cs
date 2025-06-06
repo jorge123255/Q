@@ -33,13 +33,23 @@ namespace Quasar.Client.Networking
             {
                 try
                 {
-                    SendMessage(message);
+                    Send(message);
                 }
                 catch (Exception ex)
                 {
                     Debug.WriteLine("Error sending message: " + ex.Message);
                 }
             }
+        }
+        
+        /// <summary>
+        /// Sends a message to the connected server.
+        /// </summary>
+        /// <param name="message">The message to send.</param>
+        /// <returns>True if successful, false otherwise.</returns>
+        protected bool SendMessage(IMessage message)
+        {
+            return Send(message);
         }
         /// <summary>
         /// The relay client connection for handling relay-based connections

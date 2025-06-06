@@ -80,7 +80,10 @@ namespace Quasar.Client.Networking
             _securityProvider.RateLimitExceeded += OnRateLimitExceeded;
             
             // Initialize relay manager with security provider
-            _relayManager = new RelayManager(OnRelayMessageReceived, OnRelayConnectionStateChanged);
+            _relayManager = new RelayManager(
+                (message) => OnRelayMessageReceived(message),
+                (status) => OnRelayConnectionStateChanged(status)
+            );
         }
         
         /// <summary>
@@ -120,7 +123,8 @@ namespace Quasar.Client.Networking
                 // Initialize the relay manager if needed
                 if (!_relayManager.RelayEnabled)
                 {
-                    bool initialized = _relayManager.Initialize(relayServerUrl, encryptionKey, encryptionIv);
+                    string deviceId = serverId; // Use the server ID as the device ID for now
+                    bool initialized = _relayManager.Initialize(relayServerUrl, deviceId, password);
                     if (!initialized)
                     {
                         _securityProvider.LogAuditEvent("Failed to initialize relay manager", DeviceId);

@@ -117,7 +117,7 @@ namespace Quasar.Client.Networking
             if (!RelayEnabled || _relayClient == null)
                 return false;
 
-            bool connected = _relayClient.Connect();
+            bool connected = _relayClient.Connect(_relayConnection.DeviceName ?? Environment.MachineName);
             if (!connected)
                 return false;
 
@@ -138,13 +138,13 @@ namespace Quasar.Client.Networking
         }
 
         /// <summary>
-        /// Handles relay messages from the relay server
+        /// Handles received relay messages
         /// </summary>
         /// <param name="message">The received message</param>
-        private void OnRelayMessageReceived(RelayMessage message)
+        private void OnRelayMessageReceived(IMessage message)
         {
             // Forward the message to the registered handler
-            _messageHandler?.Invoke(message);
+            _messageHandler?.Invoke((RelayMessage)message);
             
             // Process message based on type for internal state management
             switch (message.Type)
@@ -167,9 +167,8 @@ namespace Quasar.Client.Networking
         /// <summary>
         /// Handles relay connection status changes
         /// </summary>
-        /// <param name="sender">The sender</param>
         /// <param name="status">The new connection status</param>
-        private void OnRelayStatusChanged(object sender, ConnectionStatus status)
+        private void OnRelayStatusChanged(ConnectionStatus status)
         {
             // Forward the status change to the registered handler
             _statusChangedHandler?.Invoke(status);

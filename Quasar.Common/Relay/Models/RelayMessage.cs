@@ -20,6 +20,11 @@ namespace Quasar.Common.Relay.Models
         public string MessageType { get; set; }
         
         /// <summary>
+        /// The type of relay message
+        /// </summary>
+        public RelayMessageType Type { get; set; }
+        
+        /// <summary>
         /// The encrypted message data
         /// </summary>
         public byte[] MessageData { get; set; }

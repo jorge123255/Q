@@ -1,4 +1,4 @@
-﻿using Quasar.Client.Config;
+using Quasar.Client.Config;
 using Quasar.Client.Helper;
 using Quasar.Client.IO;
 using Quasar.Client.IpGeoLocation;
@@ -70,7 +70,7 @@ namespace Quasar.Client.Networking
                 {
                     Host host = _hosts.GetNextHost();
 
-                    base.Connect(host.IpAddress, host.Port);
+                    base.Connect(host.IpAddress.ToString(), host.Port);
                 }
 
                 while (Connected) // hold client open

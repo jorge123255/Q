@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quasar Relay Encryption Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="password"], textarea {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        textarea {
+            min-height: 80px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        #log {
+            border: 1px solid #ddd;
+            padding: 10px;
+            height: 300px;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+            margin-top: 20px;
+            font-family: monospace;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+        .encrypt { color: purple; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Quasar Relay Encryption Test</h1>
+        
+        <div class="form-group">
+            <label for="serverUrl">Relay Server URL:</label>
+            <input type="text" id="serverUrl" value="wss://relay.nextcloudcyber.com" />
+        </div>
+        
+        <div class="form-group">
+            <label for="deviceId">Device ID:</label>
+            <input type="text" id="deviceId" value="test-client" />
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" id="password" value="test-password" />
+        </div>
+        
+        <div class="form-group">
+            <label for="encryptionKey">Encryption Key (used with AES-GCM):</label>
+            <input type="text" id="encryptionKey" value="TestEncryptionKey123456789012345678901234" />
+        </div>
+        
+        <div class="form-group">
+            <label for="customMessage">Custom Message (JSON):</label>
+            <textarea id="customMessage">{ "type": "custom", "text": "Hello Server" }</textarea>
+        </div>
+        
+        <button id="connectBtn">Connect</button>
+        <button id="sendMsgBtn" disabled>Send Custom Message</button>
+        <button id="disconnectBtn" disabled>Disconnect</button>
+        <button id="clearLogBtn">Clear Log</button>
+        
+        <div id="log"></div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <script>
+        const serverUrlInput = document.getElementById('serverUrl');
+        const deviceIdInput = document.getElementById('deviceId');
+        const passwordInput = document.getElementById('password');
+        const encryptionKeyInput = document.getElementById('encryptionKey');
+        const customMessageInput = document.getElementById('customMessage');
+        const connectBtn = document.getElementById('connectBtn');
+        const sendMsgBtn = document.getElementById('sendMsgBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const clearLogBtn = document.getElementById('clearLogBtn');
+        const logElement = document.getElementById('log');
+        
+        let socket = null;
+        let clientId = null;
+        let encryptionRequired = false;
+        let heartbeatInterval = null;
+        let connectionAttempts = 0;
+        const MAX_ATTEMPTS = 3;
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logMessage = `[${timestamp}] ${message}`;
+            
+            const logEntry = document.createElement('div');
+            logEntry.textContent = logMessage;
+            logEntry.className = type;
+            
+            logElement.appendChild(logEntry);
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(logMessage);
+        }
+
+        // Simplified encryption using CryptoJS
+        function encrypt(text, key) {
+            try {
+                const iv = CryptoJS.lib.WordArray.random(16);
+                const encKey = CryptoJS.enc.Utf8.parse(key);
+                const encrypted = CryptoJS.AES.encrypt(text, encKey, { 
+                    iv: iv, 
+                    mode: CryptoJS.mode.GCM 
+                });
+                
+                // Combine IV and ciphertext
+                const result = iv.concat(encrypted.ciphertext).toString(CryptoJS.enc.Base64);
+                log(`Encrypted message: ${result}`, 'encrypt');
+                return result;
+            } catch (e) {
+                log(`Encryption error: ${e.message}`, 'error');
+                return null;
+            }
+        }
+        
+        function sendMessage(msg) {
+            if (!socket || socket.readyState !== WebSocket.OPEN) {
+                log('Cannot send message: Not connected', 'error');
+                return;
+            }
+            
+            try {
+                const msgStr = JSON.stringify(msg);
+                log(`Sending message: ${msgStr}`, 'info');
+                
+                if (encryptionRequired) {
+                    const encKey = encryptionKeyInput.value;
+                    const encrypted = encrypt(msgStr, encKey);
+                    if (encrypted) {
+                        socket.send(encrypted);
+                    } else {
+                        log('Failed to encrypt message', 'error');
+                    }
+                } else {
+                    socket.send(msgStr);
+                }
+            } catch (e) {
+                log(`Error sending message: ${e.message}`, 'error');
+            }
+        }
+        
+        function connect() {
+            if (connectionAttempts >= MAX_ATTEMPTS) {
+                log(`Maximum connection attempts (${MAX_ATTEMPTS}) reached. Please check server settings.`, 'error');
+                return;
+            }
+            
+            connectionAttempts++;
+            
+            const serverUrl = serverUrlInput.value.trim();
+            const deviceId = deviceIdInput.value.trim();
+            
+            if (!serverUrl || !deviceId) {
+                log('Server URL and Device ID are required', 'error');
+                return;
+            }
+            
+            log(`Connection attempt #${connectionAttempts}: Connecting to ${serverUrl}...`);
+            
+            try {
+                // Close previous connection if exists
+                if (socket) {
+                    socket.close();
+                }
+                
+                socket = new WebSocket(serverUrl);
+                
+                socket.onopen = () => {
+                    log('Connection established!', 'success');
+                    disconnectBtn.disabled = false;
+                    
+                    // Send registration message
+                    const registerMessage = {
+                        type: "register",
+                        id: deviceId,
+                        password: passwordInput.value,
+                        deviceType: "client",
+                        name: "Encryption Test Client"
+                    };
+                    
+                    log('Sending registration message', 'info');
+                    sendMessage(registerMessage);
+                };
+                
+                socket.onclose = (event) => {
+                    disconnectBtn.disabled = true;
+                    sendMsgBtn.disabled = true;
+                    
+                    if (heartbeatInterval) {
+                        clearInterval(heartbeatInterval);
+                        heartbeatInterval = null;
+                    }
+                    
+                    const reason = event.reason || 'Unknown reason';
+                    log(`Connection closed: ${reason} (code: ${event.code})`, event.wasClean ? 'info' : 'error');
+                    
+                    if (!event.wasClean && connectionAttempts < MAX_ATTEMPTS) {
+                        log(`Reconnecting in 2 seconds... (attempt ${connectionAttempts}/${MAX_ATTEMPTS})`, 'info');
+                        setTimeout(connect, 2000);
+                    }
+                };
+                
+                socket.onerror = (error) => {
+                    log(`WebSocket error: ${error.message || 'Unknown error'}`, 'error');
+                };
+                
+                socket.onmessage = (event) => {
+                    try {
+                        log(`Received raw data: ${event.data}`, 'info');
+                        
+                        try {
+                            const message = JSON.parse(event.data);
+                            log('Parsed message:', 'info');
+                            log(JSON.stringify(message, null, 2), 'info');
+                            
+                            // Handle welcome message
+                            if (message.type === 'welcome') {
+                                clientId = message.clientId;
+                                encryptionRequired = message.encryptionRequired;
+                                
+                                log(`Client ID assigned: ${clientId}`, 'success');
+                                log(`Encryption required: ${encryptionRequired}`, 'info');
+                                
+                                // Start heartbeat after welcome
+                                heartbeatInterval = setInterval(() => {
+                                    if (socket && socket.readyState === WebSocket.OPEN) {
+                                        const heartbeatMessage = {
+                                            type: "heartbeat",
+                                            id: deviceId,
+                                            timestamp: Date.now()
+                                        };
+                                        sendMessage(heartbeatMessage);
+                                        log('Heartbeat sent', 'info');
+                                    }
+                                }, 30000);
+                                
+                                sendMsgBtn.disabled = false;
+                            }
+                            
+                            // Handle registration response
+                            if (message.type === 'register_response') {
+                                if (message.success) {
+                                    log('Registration successful!', 'success');
+                                } else {
+                                    log(`Registration failed: ${message.error || 'Unknown error'}`, 'error');
+                                }
+                            }
+                            
+                            // Handle errors
+                            if (message.type === 'error') {
+                                log(`Server error: ${message.error || 'Unknown error'}`, 'error');
+                            }
+                        } catch (e) {
+                            log(`Error parsing message as JSON: ${e.message}`, 'error');
+                        }
+                    } catch (e) {
+                        log(`Error processing message: ${e.message}`, 'error');
+                    }
+                };
+            } catch (e) {
+                log(`Error creating WebSocket: ${e.message}`, 'error');
+            }
+        }
+        
+        function disconnect() {
+            if (socket) {
+                socket.close(1000, 'User disconnected');
+                log('Disconnected from server', 'info');
+                disconnectBtn.disabled = true;
+                sendMsgBtn.disabled = true;
+                
+                if (heartbeatInterval) {
+                    clearInterval(heartbeatInterval);
+                    heartbeatInterval = null;
+                }
+            } else {
+                log('No active connection to disconnect', 'error');
+            }
+        }
+        
+        function clearLog() {
+            logElement.innerHTML = '';
+            log('Log cleared', 'info');
+        }
+        
+        function sendCustomMessage() {
+            try {
+                const msgText = customMessageInput.value.trim();
+                const msg = JSON.parse(msgText);
+                sendMessage(msg);
+            } catch (e) {
+                log(`Error sending custom message: ${e.message}`, 'error');
+            }
+        }
+        
+        connectBtn.addEventListener('click', () => {
+            connectionAttempts = 0;
+            connect();
+        });
+        sendMsgBtn.addEventListener('click', sendCustomMessage);
+        disconnectBtn.addEventListener('click', disconnect);
+        clearLogBtn.addEventListener('click', clearLog);
+        
+        log('Quasar Relay Encryption Test initialized. Click "Connect" to begin.', 'info');
+    </script>
+</body>
+</html>

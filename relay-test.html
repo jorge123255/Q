@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quasar Relay Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        #statusBox {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            min-height: 20px;
+        }
+        .connected {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .disconnected {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .connecting {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        .log {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            background-color: #f8f9fa;
+        }
+        button {
+            padding: 8px 16px;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Quasar Relay Connection Test</h1>
+    
+    <div>
+        <label for="serverUrl">Relay Server URL:</label>
+        <input type="text" id="serverUrl" value="wss://relay.nextcloudcyber.com" style="width: 300px;">
+    </div>
+    
+    <div>
+        <button id="connectBtn">Connect</button>
+        <button id="disconnectBtn" disabled>Disconnect</button>
+    </div>
+    
+    <div id="statusBox" class="disconnected">
+        Status: Disconnected
+    </div>
+    
+    <div>
+        <h3>Connection Log:</h3>
+        <div id="log" class="log"></div>
+    </div>
+
+    <script>
+        let ws = null;
+        
+        function logMessage(message, isError = false) {
+            const logElem = document.getElementById('log');
+            const entry = document.createElement('div');
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            if (isError) {
+                entry.style.color = 'red';
+            }
+            logElem.appendChild(entry);
+            logElem.scrollTop = logElem.scrollHeight;
+        }
+        
+        function updateStatus(status, message) {
+            const statusBox = document.getElementById('statusBox');
+            statusBox.className = status;
+            statusBox.textContent = `Status: ${message}`;
+        }
+        
+        function connect() {
+            try {
+                const serverUrl = document.getElementById('serverUrl').value.trim();
+                if (!serverUrl) {
+                    logMessage('Please enter a server URL', true);
+                    return;
+                }
+                
+                logMessage(`Connecting to ${serverUrl}...`);
+                updateStatus('connecting', 'Connecting...');
+                
+                ws = new WebSocket(serverUrl);
+                
+                ws.onopen = function() {
+                    logMessage('Connection established!');
+                    updateStatus('connected', 'Connected');
+                    document.getElementById('connectBtn').disabled = true;
+                    document.getElementById('disconnectBtn').disabled = false;
+                    
+                    // Send a simple ping message
+                    setTimeout(() => {
+                        try {
+                            ws.send(JSON.stringify({ type: 'ping', timestamp: Date.now() }));
+                            logMessage('Ping message sent');
+                        } catch (e) {
+                            logMessage(`Error sending ping: ${e.message}`, true);
+                        }
+                    }, 1000);
+                };
+                
+                ws.onmessage = function(evt) {
+                    logMessage(`Message received: ${evt.data}`);
+                    try {
+                        const data = JSON.parse(evt.data);
+                        if (data.DeviceIdAssigned) {
+                            logMessage(`Device ID assigned: ${data.DeviceIdAssigned}`);
+                        }
+                    } catch (e) {
+                        logMessage('Received non-JSON message');
+                    }
+                };
+                
+                ws.onclose = function() {
+                    logMessage('Connection closed');
+                    updateStatus('disconnected', 'Disconnected');
+                    document.getElementById('connectBtn').disabled = false;
+                    document.getElementById('disconnectBtn').disabled = true;
+                    ws = null;
+                };
+                
+                ws.onerror = function(evt) {
+                    logMessage('WebSocket error', true);
+                    updateStatus('disconnected', 'Error');
+                };
+            } catch (e) {
+                logMessage(`Error: ${e.message}`, true);
+                updateStatus('disconnected', 'Error');
+            }
+        }
+        
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                logMessage('Disconnecting...');
+            }
+        }
+        
+        document.getElementById('connectBtn').addEventListener('click', connect);
+        document.getElementById('disconnectBtn').addEventListener('click', disconnect);
+    </script>
+</body>
+</html>

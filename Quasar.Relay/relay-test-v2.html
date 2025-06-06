@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quasar Relay Test Client v2</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            line-height: 1.6;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="text"], input[type="password"], select {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .button-group {
+            margin: 20px 0;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        button:hover {
+            opacity: 0.8;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #log {
+            border: 1px solid #ddd;
+            padding: 10px;
+            height: 300px;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+            margin-top: 20px;
+            font-family: monospace;
+            border-radius: 4px;
+        }
+        .success {
+            color: green;
+        }
+        .error {
+            color: red;
+        }
+        .info {
+            color: blue;
+        }
+        .warning {
+            color: orange;
+        }
+        pre {
+            white-space: pre-wrap;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Quasar Relay Test Client v2</h1>
+        
+        <div class="form-group">
+            <label for="serverUrl">Relay Server URL:</label>
+            <input type="text" id="serverUrl" value="wss://relay.nextcloudcyber.com" />
+        </div>
+        
+        <div class="form-group">
+            <label for="deviceId">Device ID:</label>
+            <input type="text" id="deviceId" value="test-device-id" />
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" id="password" value="test-password" />
+        </div>
+
+        <div class="form-group">
+            <label for="clientType">Client Type:</label>
+            <select id="clientType">
+                <option value="server">Server</option>
+                <option value="client">Client</option>
+                <option value="test" selected>Test</option>
+            </select>
+        </div>
+        
+        <div class="button-group">
+            <button id="connectBtn">Connect</button>
+            <button id="disconnectBtn" disabled>Disconnect</button>
+            <button id="sendAuthBtn" disabled>Send Auth</button>
+            <button id="sendPingBtn" disabled>Send Ping</button>
+            <button id="clearLogBtn">Clear Log</button>
+        </div>
+        
+        <div id="log"></div>
+    </div>
+    
+    <script>
+        // Elements
+        const serverUrlInput = document.getElementById('serverUrl');
+        const deviceIdInput = document.getElementById('deviceId');
+        const passwordInput = document.getElementById('password');
+        const clientTypeSelect = document.getElementById('clientType');
+        const connectBtn = document.getElementById('connectBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const sendAuthBtn = document.getElementById('sendAuthBtn');
+        const sendPingBtn = document.getElementById('sendPingBtn');
+        const clearLogBtn = document.getElementById('clearLogBtn');
+        const logElement = document.getElementById('log');
+        
+        // Global variables
+        let socket = null;
+        let pingInterval = null;
+        let reconnectAttempts = 0;
+        const MAX_RECONNECT_ATTEMPTS = 5;
+        
+        // Logging function
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            let logMessage = `[${timestamp}] `;
+            
+            // Format objects nicely
+            if (typeof message === 'object') {
+                logMessage += JSON.stringify(message, null, 2);
+            } else {
+                logMessage += message;
+            }
+            
+            const logEntry = document.createElement('div');
+            logEntry.classList.add(type);
+            
+            // Use <pre> for formatted JSON
+            if (typeof message === 'object') {
+                const pre = document.createElement('pre');
+                pre.textContent = `[${timestamp}] ${JSON.stringify(message, null, 2)}`;
+                logEntry.appendChild(pre);
+            } else {
+                logEntry.textContent = logMessage;
+            }
+            
+            logElement.appendChild(logEntry);
+            logElement.scrollTop = logElement.scrollHeight;
+            console.log(logMessage);
+        }
+
+        // Helper function to generate a UUID
+        function generateUUID() {
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                return v.toString(16);
+            });
+        }
+        
+        // Connect to WebSocket server
+        function connect() {
+            const serverUrl = serverUrlInput.value.trim();
+            
+            if (!serverUrl) {
+                log('Please enter a server URL', 'error');
+                return;
+            }
+            
+            try {
+                log(`Connecting to ${serverUrl}...`);
+                
+                // Close existing socket if it exists
+                if (socket) {
+                    socket.close();
+                }
+                
+                socket = new WebSocket(serverUrl);
+                
+                socket.onopen = () => {
+                    log('Connection established!', 'success');
+                    reconnectAttempts = 0;
+                    connectBtn.disabled = true;
+                    disconnectBtn.disabled = false;
+                    sendAuthBtn.disabled = false;
+                    sendPingBtn.disabled = true; // Enable after auth
+                    
+                    // Auto-send authentication if preferred
+                    // setTimeout(sendAuth, 500);
+                };
+                
+                socket.onclose = (event) => {
+                    const reason = event.reason || (event.code === 1000 ? 'Normal closure' : 'Unknown reason');
+                    log(`Connection closed: ${reason} (code: ${event.code})`, event.wasClean ? 'info' : 'error');
+                    clearInterval(pingInterval);
+                    pingInterval = null;
+                    
+                    // Auto-reconnect logic
+                    if (reconnectAttempts < MAX_RECONNECT_ATTEMPTS && !event.wasClean) {
+                        reconnectAttempts++;
+                        const delay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+                        log(`Reconnecting in ${delay/1000} seconds... (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`, 'warning');
+                        setTimeout(connect, delay);
+                    } else {
+                        resetConnectionState();
+                    }
+                };
+                
+                socket.onerror = (error) => {
+                    log(`WebSocket error: ${error.message || 'Unknown error'}`, 'error');
+                };
+                
+                socket.onmessage = (event) => {
+                    try {
+                        // Check if the message is a plain text or JSON
+                        let message;
+                        try {
+                            message = JSON.parse(event.data);
+                            log('Received message:', 'info');
+                            log(message);
+                        } catch (e) {
+                            log(`Received raw text: ${event.data}`, 'info');
+                            return;
+                        }
+                        
+                        // Handle different message types
+                        if (message.type === 'auth_response') {
+                            handleAuthResponse(message);
+                        } else if (message.type === 'ping') {
+                            handlePing(message);
+                        } else if (message.type === 'pong') {
+                            handlePong(message);
+                        } else {
+                            log(`Received unknown message type: ${message.type}`, 'warning');
+                        }
+                    } catch (e) {
+                        log(`Error processing message: ${e.message}`, 'error');
+                    }
+                };
+            } catch (e) {
+                log(`Error creating WebSocket: ${e.message}`, 'error');
+                resetConnectionState();
+            }
+        }
+        
+        // Handle authentication response
+        function handleAuthResponse(message) {
+            if (message.success) {
+                log('Authentication successful!', 'success');
+                sendPingBtn.disabled = false;
+                
+                // Start ping interval for keepalive
+                pingInterval = setInterval(sendPing, 15000);
+            } else {
+                log(`Authentication failed: ${message.error || 'Unknown error'}`, 'error');
+            }
+        }
+        
+        // Handle ping message
+        function handlePing(message) {
+            log('Received ping, sending pong...', 'info');
+            const pongMessage = {
+                type: 'pong',
+                id: message.id || generateUUID(),
+                timestamp: Date.now()
+            };
+            sendMessage(pongMessage);
+        }
+        
+        // Handle pong message
+        function handlePong(message) {
+            if (message.timestamp) {
+                const latency = Date.now() - message.timestamp;
+                log(`Pong received, latency: ${latency}ms`, 'info');
+            } else {
+                log('Pong received', 'info');
+            }
+        }
+        
+        // Disconnect from WebSocket server
+        function disconnect() {
+            if (socket) {
+                log('Disconnecting...');
+                socket.close(1000, 'User disconnected');
+                resetConnectionState();
+            }
+        }
+        
+        // Reset connection state
+        function resetConnectionState() {
+            if (pingInterval) {
+                clearInterval(pingInterval);
+                pingInterval = null;
+            }
+            
+            connectBtn.disabled = false;
+            disconnectBtn.disabled = true;
+            sendAuthBtn.disabled = true;
+            sendPingBtn.disabled = true;
+        }
+        
+        // Send authentication message
+        function sendAuth() {
+            const deviceId = deviceIdInput.value.trim();
+            const password = passwordInput.value;
+            const clientType = clientTypeSelect.value;
+            
+            if (!deviceId) {
+                log('Device ID is required', 'error');
+                return;
+            }
+            
+            try {
+                // Generate unique message ID
+                const messageId = generateUUID();
+                
+                // Create auth message
+                const authMessage = {
+                    type: 'auth',
+                    id: messageId,
+                    deviceId: deviceId,
+                    password: password,
+                    version: '1.4.0', // Try a specific version
+                    clientType: clientType,
+                    timestamp: Date.now(),
+                    features: ['relay', 'encryption'] // Indicate supported features
+                };
+                
+                sendMessage(authMessage);
+                log('Authentication message sent');
+            } catch (e) {
+                log(`Error sending auth: ${e.message}`, 'error');
+            }
+        }
+        
+        // Send ping message
+        function sendPing() {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                const pingMessage = {
+                    type: 'ping',
+                    id: generateUUID(),
+                    timestamp: Date.now()
+                };
+                sendMessage(pingMessage);
+                log('Ping sent');
+            } else {
+                log('Cannot send ping: Connection not open', 'error');
+            }
+        }
+        
+        // Send message to server
+        function sendMessage(message) {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                try {
+                    const messageString = JSON.stringify(message);
+                    socket.send(messageString);
+                    log('Sent message:', 'info');
+                    log(message);
+                } catch (e) {
+                    log(`Error sending message: ${e.message}`, 'error');
+                }
+            } else {
+                log('Cannot send message: Connection not open', 'error');
+            }
+        }
+        
+        // Clear log
+        function clearLog() {
+            logElement.innerHTML = '';
+            log('Log cleared', 'info');
+        }
+        
+        // Event listeners
+        connectBtn.addEventListener('click', connect);
+        disconnectBtn.addEventListener('click', disconnect);
+        sendAuthBtn.addEventListener('click', sendAuth);
+        sendPingBtn.addEventListener('click', sendPing);
+        clearLogBtn.addEventListener('click', clearLog);
+        
+        // Handle page unload
+        window.addEventListener('beforeunload', () => {
+            if (socket && socket.readyState === WebSocket.OPEN) {
+                socket.close(1000, 'Page unloaded');
+            }
+        });
+        
+        // Initialize
+        log('WebSocket test client initialized', 'info');
+        log('Click "Connect" to start', 'info');
+    </script>
+</body>
+</html>

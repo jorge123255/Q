@@ -18,6 +18,16 @@ namespace Quasar.Common.Relay.Services
         public string ServerUrl { get; set; } = "wss://relay.nextcloudcyber.com";
         
         /// <summary>
+        /// The relay server URL (alias for ServerUrl for backward compatibility)
+        /// </summary>
+        [DataMember]
+        public string RelayServerUrl
+        {
+            get { return ServerUrl; }
+            set { ServerUrl = value; }
+        }
+        
+        /// <summary>
         /// The device ID used for authentication
         /// </summary>
         [DataMember]
@@ -28,6 +38,18 @@ namespace Quasar.Common.Relay.Services
         /// </summary>
         [DataMember]
         public string DeviceName { get; set; }
+        
+        /// <summary>
+        /// The device type (server/client)
+        /// </summary>
+        [DataMember]
+        public string DeviceType { get; set; } = "client";
+        
+        /// <summary>
+        /// Whether to try direct connection before using relay
+        /// </summary>
+        [DataMember]
+        public bool TryDirectConnection { get; set; } = true;
         
         /// <summary>
         /// The password used for authentication

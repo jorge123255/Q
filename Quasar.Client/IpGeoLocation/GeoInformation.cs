@@ -16,6 +16,7 @@ namespace Quasar.Client.IpGeoLocation
         public double Latitude { get; set; }
         public double Longitude { get; set; }
         public string TimeZone { get; set; }
+        public int ImageIndex { get; set; } = -1;
 
         public GeoInformation()
         {
