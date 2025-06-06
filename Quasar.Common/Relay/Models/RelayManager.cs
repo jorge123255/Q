@@ -7,6 +7,7 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace Quasar.Common.Relay.Models
 {
@@ -301,14 +302,14 @@ namespace Quasar.Common.Relay.Models
                 if (messageJson.Contains("\"DeviceIdAssigned\":"))
                 {
                     // Device ID assignment message
-                    var deviceIdMessage = Serializer.JsonDeserialize<RelayDeviceIdAssignment>(messageJson);
+                    var deviceIdMessage = JsonConvert.DeserializeObject<RelayDeviceIdAssignment>(messageJson);
                     DeviceId = deviceIdMessage.DeviceIdAssigned;
                     _securityProvider.LogAuditEvent($"Device ID assigned: {DeviceId}");
                 }
                 else if (messageJson.Contains("\"MessageType\":") && messageJson.Contains("\"MessageData\":"))
                 {
                     // Relay message containing an actual command/message
-                    var relayMessage = Serializer.JsonDeserialize<RelayMessage>(messageJson);
+                    var relayMessage = JsonConvert.DeserializeObject<RelayMessage>(messageJson);
                     
                     // Decrypt and deserialize the message
                     var message = DecryptAndDeserializeMessage(relayMessage.MessageData, relayMessage.MessageType);
@@ -322,7 +323,7 @@ namespace Quasar.Common.Relay.Models
                 else if (messageJson.Contains("\"SourceDeviceId\":") && messageJson.Contains("\"Connected\":"))
                 {
                     // Connection status message
-                    var connectionStatus = Serializer.JsonDeserialize<RelayConnectionStatus>(messageJson);
+                    var connectionStatus = JsonConvert.DeserializeObject<RelayConnectionStatus>(messageJson);
                     
                     // Log the connection status
                     _securityProvider.LogAuditEvent(
@@ -355,7 +356,7 @@ namespace Quasar.Common.Relay.Models
                     return false;
                     
                 // Serialize the message
-                string json = Serializer.JsonSerialize(message);
+                string json = JsonConvert.SerializeObject(message);
                 byte[] messageBytes = Encoding.UTF8.GetBytes(json);
                 
                 // Send the message
@@ -388,7 +389,7 @@ namespace Quasar.Common.Relay.Models
         private byte[] SerializeAndEncryptMessage(IMessage message)
         {
             // Serialize the message to JSON
-            string json = Serializer.JsonSerialize(message);
+            string json = JsonConvert.SerializeObject(message);
             byte[] messageBytes = Encoding.UTF8.GetBytes(json);
             
             // Encrypt the message data
@@ -415,7 +416,7 @@ namespace Quasar.Common.Relay.Models
                     return null;
                 }
                 
-                return (IMessage)Serializer.JsonDeserialize(json, type);
+                return (IMessage)JsonConvert.DeserializeObject(json, type);
             }
             catch (Exception ex)
             {
