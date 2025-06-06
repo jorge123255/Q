@@ -315,5 +315,12 @@
       <Version>2.1.0</Version>
     </PackageReference>
   </ItemGroup>
-  <PropertyGroup />
+  <PropertyGroup>
+    <!-- Don't use the newer resource serialization API that requires System.Resources.Extensions -->
+    <GenerateResourceUsePreserializedResources>false</GenerateResourceUsePreserializedResources>
+    <UseWPF>false</UseWPF>
+    <DisableWinExeOutputInference>true</DisableWinExeOutputInference>
+    <!-- Force old resource generator -->
+    <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3822</MSBuildWarningsAsMessages>
+  </PropertyGroup>
 </Project>
